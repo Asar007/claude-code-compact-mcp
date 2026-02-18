@@ -1,5 +1,9 @@
 # Claude Code Compact MCP
 
+[![npm version](https://img.shields.io/npm/v/claude-code-compact-mcp.svg)](https://www.npmjs.com/package/claude-code-compact-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/claude-code-compact-mcp.svg)](https://www.npmjs.com/package/claude-code-compact-mcp)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 An MCP (Model Context Protocol) server that helps compact Claude Code conversations into Navigate Chat-compatible visualizations.
 
 ## Overview
@@ -13,8 +17,22 @@ This lightweight MCP server provides utility tools for:
 
 ## Installation
 
+### Via npm (Recommended)
+
 ```bash
-git clone https://github.com/YOUR_USERNAME/claude-code-compact-mcp.git
+npm install -g claude-code-compact-mcp
+```
+
+Or run directly with npx:
+
+```bash
+npx claude-code-compact-mcp
+```
+
+### From Source
+
+```bash
+git clone https://github.com/Asar007/claude-code-compact-mcp.git
 cd claude-code-compact-mcp
 npm install
 npm run build
@@ -24,14 +42,28 @@ npm run build
 
 ### 1. Add to Claude Code
 
-Add this to your Claude Code MCP settings (`~/.claude.json`):
+Add this to your Claude Code MCP settings:
+- **macOS/Linux:** `~/.claude.json`
+- **Windows:** `%USERPROFILE%\.claude.json`
 
 ```json
 {
   "mcpServers": {
     "claude-code-compact": {
-      "command": "node",
-      "args": ["/path/to/claude-code-compact-mcp/dist/index.js"]
+      "command": "npx",
+      "args": ["claude-code-compact-mcp"]
+    }
+  }
+}
+```
+
+Or if installed globally:
+
+```json
+{
+  "mcpServers": {
+    "claude-code-compact": {
+      "command": "claude-code-compact-mcp"
     }
   }
 }
@@ -45,8 +77,8 @@ Only needed if you want to push visualizations to Navigate Chat:
 {
   "mcpServers": {
     "claude-code-compact": {
-      "command": "node",
-      "args": ["/path/to/claude-code-compact-mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["claude-code-compact-mcp"],
       "env": {
         "NAVIGATE_CHAT_API_URL": "http://localhost:8000",
         "NAVIGATE_CHAT_EMAIL": "your-email",
@@ -213,6 +245,7 @@ MIT
 
 ## Related
 
+- [npm Package](https://www.npmjs.com/package/claude-code-compact-mcp) - Install from npm
 - [Navigate Chat](https://navigatechat.com) - Visualization platform
 - [Model Context Protocol](https://modelcontextprotocol.io) - MCP specification
 - [Claude Code](https://claude.ai/code) - Anthropic's CLI for Claude

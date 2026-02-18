@@ -4,12 +4,41 @@
   "description": "MCP server for compacting Claude Code conversations into Navigate Chat visualizations",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "claude-code-compact-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist",
+    "skill.md",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run build"
   },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "claude",
+    "claude-code",
+    "visualization",
+    "mindmap",
+    "conversation",
+    "anthropic"
+  ],
+  "author": "Asar007",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Asar007/claude-code-compact-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Asar007/claude-code-compact-mcp/issues"
+  },
+  "homepage": "https://github.com/Asar007/claude-code-compact-mcp#readme",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",
     "dotenv": "^16.4.5",
