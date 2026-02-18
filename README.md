@@ -48,7 +48,7 @@ Only needed if you want to push visualizations to Navigate Chat:
       "command": "node",
       "args": ["/path/to/claude-code-compact-mcp/dist/index.js"],
       "env": {
-        "NAVIGATE_CHAT_API_URL": "http://your-api-url:8000",
+        "NAVIGATE_CHAT_API_URL": "http://localhost:8000",
         "NAVIGATE_CHAT_EMAIL": "your-email",
         "NAVIGATE_CHAT_PASSWORD": "your-password"
       }
