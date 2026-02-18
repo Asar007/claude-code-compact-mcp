@@ -3,6 +3,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { compactConversation } from './tools/compact-conversation.js';
@@ -22,9 +24,108 @@ export function createServer(): Server {
     {
       capabilities: {
         tools: {},
+        prompts: {},
       },
     }
   );
+
+  // Register prompts list handler
+  server.setRequestHandler(ListPromptsRequestSchema, async () => {
+    return {
+      prompts: [
+        {
+          name: 'compact',
+          description: 'Analyze the current conversation and create a visualization (mindmap, sequence diagram, knowledge graph, or timeline)',
+          arguments: [
+            {
+              name: 'type',
+              description: 'Visualization type: mindmap, sequence, knowledge_graph, or timeline',
+              required: false,
+            },
+          ],
+        },
+      ],
+    };
+  });
+
+  // Register get prompt handler
+  server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    const { name, arguments: args } = request.params;
+
+    if (name === 'compact') {
+      const vizType = (args?.type as string) || 'mindmap';
+
+      return {
+        messages: [
+          {
+            role: 'user',
+            content: {
+              type: 'text',
+              text: `Analyze our ENTIRE conversation above and create a ${vizType} visualization.
+
+INSTRUCTIONS:
+1. Read through ALL messages in this conversation
+2. Identify the main topic, key points, entities mentioned, and actions taken
+3. Create a ${vizType} JSON structure following this format:
+
+${vizType === 'mindmap' ? `{
+  "title": "Conversation Topic",
+  "type": "mindmap",
+  "root": {
+    "content": "Main Topic",
+    "children": [
+      {
+        "content": "Subtopic 1",
+        "children": [
+          {"content": "Detail 1"},
+          {"content": "Detail 2"}
+        ]
+      },
+      {
+        "content": "Subtopic 2",
+        "children": [...]
+      }
+    ]
+  }
+}` : vizType === 'sequence' ? `{
+  "title": "Process Flow",
+  "type": "sequence",
+  "participants": ["User", "Assistant", "System"],
+  "messages": [
+    {"from": "User", "to": "Assistant", "content": "Request"},
+    {"from": "Assistant", "to": "System", "content": "Action"},
+    {"from": "System", "to": "Assistant", "content": "Result"}
+  ]
+}` : vizType === 'knowledge_graph' ? `{
+  "title": "Knowledge Graph",
+  "type": "knowledge_graph",
+  "nodes": [
+    {"id": "1", "label": "Entity 1", "type": "concept"},
+    {"id": "2", "label": "Entity 2", "type": "action"}
+  ],
+  "edges": [
+    {"from": "1", "to": "2", "label": "relates to"}
+  ]
+}` : `{
+  "title": "Timeline",
+  "type": "timeline",
+  "events": [
+    {"date": "Step 1", "title": "First Action", "description": "What happened"},
+    {"date": "Step 2", "title": "Second Action", "description": "What happened"}
+  ]
+}`}
+
+4. After generating the JSON, call the export_json tool to save it locally
+
+IMPORTANT: Read the ENTIRE conversation history, not just the last message. Include all key topics discussed.`,
+            },
+          },
+        ],
+      };
+    }
+
+    throw new Error(`Unknown prompt: ${name}`);
+  });
 
   // Register tool list handler
   server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -32,17 +133,17 @@ export function createServer(): Server {
       tools: [
         {
           name: 'compact_conversation',
-          description: 'Extract and summarize a Claude Code session from a JSONL transcript file. Returns topic, key points, entities, and actions that can be used to generate a visualization.',
+          description: 'Extract and summarize a Claude conversation. Supports multiple formats: (1) Claude Code CLI JSONL transcripts, (2) Plain text conversations copied from Claude Desktop/Web (Human:/Assistant: format). Returns topic, key points, entities, and actions for visualization.',
           inputSchema: {
             type: 'object',
             properties: {
               source: {
                 type: 'string',
-                description: 'Path to JSONL transcript file, or raw conversation content',
+                description: 'Path to JSONL transcript file, OR pasted conversation text (Human:/Assistant: format from Claude Desktop/Web)',
               },
               isFilePath: {
                 type: 'boolean',
-                description: 'Whether source is a file path (true) or raw content (false). Defaults to true if source ends with .jsonl',
+                description: 'Whether source is a file path (true) or raw content (false). Auto-detects if source ends with .jsonl',
               },
             },
             required: ['source'],

@@ -14,6 +14,77 @@ interface JsonlEntry {
  */
 export class ConversationExtractor {
   /**
+   * Detect content format and parse accordingly
+   */
+  parseContent(content: string): ConversationMessage[] {
+    const trimmed = content.trim();
+
+    // Check if it's JSONL format (starts with '{')
+    if (trimmed.startsWith('{')) {
+      return this.parseJsonlTranscript(content);
+    }
+
+    // Check if it's plain text conversation format
+    if (this.isPlainTextConversation(trimmed)) {
+      return this.parsePlainTextConversation(content);
+    }
+
+    // Fallback: treat as single user message
+    return [{ role: 'user', content: trimmed }];
+  }
+
+  /**
+   * Check if content looks like a plain text conversation
+   */
+  private isPlainTextConversation(content: string): boolean {
+    // Look for conversation markers
+    const markers = [
+      /^Human:/m,
+      /^Assistant:/m,
+      /^User:/m,
+      /^Claude:/m,
+      /^You:/m,
+      /^AI:/m,
+    ];
+    return markers.some(marker => marker.test(content));
+  }
+
+  /**
+   * Parse plain text conversation (copy/paste from Claude Desktop/Web)
+   * Supports formats like:
+   * - Human: / Assistant:
+   * - User: / Claude:
+   * - You: / AI:
+   */
+  parsePlainTextConversation(content: string): ConversationMessage[] {
+    const messages: ConversationMessage[] = [];
+
+    // Split by role markers
+    const rolePattern = /^(Human|Assistant|User|Claude|You|AI):\s*/gmi;
+    const parts = content.split(rolePattern).filter(p => p.trim());
+
+    for (let i = 0; i < parts.length - 1; i += 2) {
+      const roleMarker = parts[i].toLowerCase();
+      const messageContent = parts[i + 1]?.trim();
+
+      if (!messageContent) continue;
+
+      let role: 'user' | 'assistant';
+      if (['human', 'user', 'you'].includes(roleMarker)) {
+        role = 'user';
+      } else if (['assistant', 'claude', 'ai'].includes(roleMarker)) {
+        role = 'assistant';
+      } else {
+        continue;
+      }
+
+      messages.push({ role, content: messageContent });
+    }
+
+    return messages;
+  }
+
+  /**
    * Parse a Claude Code JSONL transcript file
    */
   parseJsonlTranscript(content: string): ConversationMessage[] {
@@ -137,10 +208,10 @@ export class ConversationExtractor {
   }
 
   /**
-   * Compact a conversation from raw content
+   * Compact a conversation from raw content (auto-detects format)
    */
   compactConversation(rawContent: string): CompactedConversation {
-    const messages = this.parseJsonlTranscript(rawContent);
+    const messages = this.parseContent(rawContent);
     const summary = this.extractSummary(messages);
 
     return {

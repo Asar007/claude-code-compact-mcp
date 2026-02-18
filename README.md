@@ -9,9 +9,13 @@ An MCP (Model Context Protocol) server that helps compact Claude Code conversati
 ## Overview
 
 This lightweight MCP server provides utility tools for:
-- **Parsing** Claude Code JSONL transcripts
+- **Parsing** conversations from Claude Code CLI, Claude Desktop, or Claude Web
 - **Exporting** visualization JSON to local files
 - **Pushing** visualizations to Navigate Chat API
+
+**Supported Formats:**
+- Claude Code CLI (`.jsonl` transcripts)
+- Claude Desktop/Web (copy/paste `Human:`/`Assistant:` format)
 
 **Key Design:** Claude Code generates the visualization JSON directly using the included `skill.md` prompt. No external LLM API calls needed.
 
@@ -40,7 +44,24 @@ npm run build
 
 ## Quick Start
 
-### 1. Add to Claude Code
+### 1. Add to Claude Desktop
+
+Add this to your Claude Desktop config:
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "claude-code-compact": {
+      "command": "npx",
+      "args": ["-y", "claude-code-compact-mcp"]
+    }
+  }
+}
+```
+
+### 1b. Add to Claude Code CLI
 
 Add this to your Claude Code MCP settings:
 - **macOS/Linux:** `~/.claude.json`
@@ -51,19 +72,7 @@ Add this to your Claude Code MCP settings:
   "mcpServers": {
     "claude-code-compact": {
       "command": "npx",
-      "args": ["claude-code-compact-mcp"]
-    }
-  }
-}
-```
-
-Or if installed globally:
-
-```json
-{
-  "mcpServers": {
-    "claude-code-compact": {
-      "command": "claude-code-compact-mcp"
+      "args": ["-y", "claude-code-compact-mcp"]
     }
   }
 }
@@ -91,12 +100,29 @@ Only needed if you want to push visualizations to Navigate Chat:
 
 ### 3. Use It
 
-In Claude Code, just say:
+**In Claude Desktop:**
+```
+/compact
+```
+or
+```
+/compact type:sequence
+```
+
+Claude will automatically read the entire conversation and create a visualization.
+
+**In Claude Code CLI:**
 ```
 compact this conversation
 ```
 
-Claude Code will generate a visualization JSON and can save/push it using the MCP tools.
+**Visualization Types:**
+- `mindmap` (default) - Hierarchical topic breakdown
+- `sequence` - Process flow diagram
+- `knowledge_graph` - Entity relationships
+- `timeline` - Chronological events
+
+The tool auto-detects the format and extracts key information. Visualizations are saved to `~/.claude-code-compact/visualizations/`.
 
 ## Tools
 
@@ -108,11 +134,17 @@ Claude Code will generate a visualization JSON and can save/push it using the MC
 
 ### compact_conversation
 
-Extracts structured information from a Claude Code session.
+Extracts structured information from any Claude conversation.
 
 ```typescript
-// Input
+// Input - JSONL file (Claude Code CLI)
 { source: "path/to/transcript.jsonl" }
+
+// Input - Plain text (Claude Desktop/Web)
+{
+  source: "Human: How do I create a React component?\n\nAssistant: Here's how to create a React component...",
+  isFilePath: false
+}
 
 // Output
 {
